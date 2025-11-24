@@ -35,12 +35,10 @@ def getModeCommand(mode):
 
 
 def getBrightnessCommand(brightness):
-    if 10 <= brightness < 100:
+    if 0 <= brightness <= 255:
         hex_string = f"03 01 01 {brightness:02x}"
         return bytearray.fromhex(hex_string.replace(" ", ""))
-    raise Exception(
-        "Invalid brightness. Brightness has to be larger than 10 and smaller than 100."
-    )
+    raise Exception("Invalid brightness. Brightness has to be between 0 and 255.")
 
 
 def get_brightness_from_bytearray(byte_array):
@@ -52,6 +50,18 @@ def get_brightness_from_bytearray(byte_array):
     # Convert the hexadecimal value back to decimal
     brightness_decimal = int(brightness_hex, 16)
     return brightness_decimal
+
+
+def convert_device_brightness_to_ha(brightness: int) -> int:
+    """Convert device brightness (0-255) to Home Assistant brightness (0-255)."""
+
+    return max(0, min(255, int(brightness)))
+
+
+def convert_ha_brightness_to_device(brightness: int) -> int:
+    """Convert Home Assistant brightness (0-255) directly to device brightness (0-255)."""
+
+    return max(0, min(255, int(brightness)))
 
 
 async def sendCommand(
