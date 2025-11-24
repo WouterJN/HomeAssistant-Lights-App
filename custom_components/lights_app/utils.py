@@ -54,6 +54,20 @@ def get_brightness_from_bytearray(byte_array):
     return brightness_decimal
 
 
+def convert_device_brightness_to_ha(brightness: int) -> int:
+    """Convert device brightness (10-99) to Home Assistant brightness (0-255)."""
+
+    return round(brightness / 99 * 255)
+
+
+def convert_ha_brightness_to_device(brightness: int) -> int:
+    """Convert Home Assistant brightness (0-255) to device brightness (10-99)."""
+
+    normalized = max(0, min(255, brightness))
+    scaled = round(normalized / 255 * 99)
+    return max(10, min(99, scaled))
+
+
 async def sendCommand(
     entryData: dict, client: BleakClient, service: BleakGATTServiceCollection, command
 ):
