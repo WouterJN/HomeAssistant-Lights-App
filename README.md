@@ -30,6 +30,11 @@ Integration allows setting brightness, controlling state and all the available m
   <img src="/img/img3.png" width="400" />
 </p>
 
+## Recent improvements
+
+- Coordinator refreshes now ask the controller for light and mode status only when Home Assistant is waiting on state, mode, or brightness data. This trims unnecessary BLE chatter that could cause momentary flickers during routine polling.
+- When the Bluetooth link drops, state, mode, and brightness are marked as pending so the next reconnect performs a one-time resync. Entities recover their values without the rapid-fire polling writes that might trigger flashes.
+
 ## Have a comment or a suggestion?
 
 Please [open a new issue](https://github.com/JurajNyiri/HomeAssistant-Lights-App/issues/new/choose), or discuss on [Home Assistant: Community Forum](https://community.home-assistant.io/t/custom-component-lights-app-bluetooth-outside-christmas-lights/654770).
