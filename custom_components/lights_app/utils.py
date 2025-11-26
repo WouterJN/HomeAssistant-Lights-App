@@ -93,6 +93,8 @@ def disconnect_handler(entryData: dict):
         entryData["modePending"] = True
         entryData["brightness"] = None
         entryData["brightnessPending"] = True
+        entryData["refreshInProgress"] = False
+        entryData["lastRefreshRequest"] = None
         entryData["connection"]["connected"] = False
         for entity in entryData["entities"]:
             entity.async_write_ha_state()
@@ -126,6 +128,18 @@ def transformModeToHex(currentMode):
     return hex_byte
 
 
+def reset_refresh_if_complete(entryData: dict) -> None:
+    """Clear the refresh-in-progress flag once pending values are resolved."""
+
+    if not (
+        entryData.get("statePending")
+        or entryData.get("modePending")
+        or entryData.get("brightnessPending")
+    ):
+        entryData["refreshInProgress"] = False
+        entryData["lastRefreshRequest"] = None
+
+
 def notification_handler(entryData: dict):
     async def bleak_notification_handler(
         characteristic: BleakGATTCharacteristic, data: bytearray
@@ -149,5 +163,7 @@ def notification_handler(entryData: dict):
             entryData["modePending"] = False
             entryData["brightnessPending"] = False
             await updateEntities(entryData["entities"])
+
+        reset_refresh_if_complete(entryData)
 
     return bleak_notification_handler

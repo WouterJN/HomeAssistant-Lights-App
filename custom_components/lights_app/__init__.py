@@ -1,3 +1,5 @@
+import time
+
 from bleak_retry_connector import establish_connection, BleakClientWithServiceCache
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS
@@ -14,6 +16,7 @@ from .utils import (
     getLightStateCommand,
     disconnect_handler,
     getModeStateCommand,
+    reset_refresh_if_complete,
 )
 
 
@@ -62,6 +65,12 @@ async def setupConnection(hass, address, config_entry):
                         notification_handler(hass.data[DOMAIN][config_entry.entry_id]),
                     )
 
+                    hass.data[DOMAIN][config_entry.entry_id][
+                        "refreshInProgress"
+                    ] = True
+                    hass.data[DOMAIN][config_entry.entry_id]["lastRefreshRequest"] = (
+                        time.monotonic()
+                    )
                     await sendCommand(
                         hass.data[DOMAIN][config_entry.entry_id],
                         client,
@@ -115,6 +124,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         "modePending": True,
         "brightness": None,
         "brightnessPending": True,
+        "refreshInProgress": False,
+        "lastRefreshRequest": None,
         "connection": {"connected": False, "connecting": False},
     }
 
@@ -140,6 +151,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 LOGGER.debug("No pending data, skipping BLE refresh")
                 return
 
+            now = time.monotonic()
+            if entry_data.get("refreshInProgress"):
+                last_request = entry_data.get("lastRefreshRequest")
+                if last_request and now - last_request < 30:
+                    LOGGER.debug(
+                        "Refresh already in progress, skipping BLE refresh"
+                    )
+                    return
+
+                LOGGER.debug(
+                    "Refresh request timed out, retrying Bluetooth refresh commands"
+                )
+
+            entry_data["refreshInProgress"] = True
+            entry_data["lastRefreshRequest"] = now
             await sendCommand(
                 entry_data,
                 connection["client"],
@@ -152,6 +178,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 connection["service"],
                 getModeStateCommand(),
             )
+
+            reset_refresh_if_complete(entry_data)
 
         lightsAppCoordinator = DataUpdateCoordinator(
             hass,
