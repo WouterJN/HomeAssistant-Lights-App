@@ -95,6 +95,9 @@ class LightsAppModeSwitch(LightsAppSwitchEntity):
 
     async def async_turn_on(self) -> None:
         self._entryData["mode"][self._mode] = True
+        self._entryData["modePending"] = False
+        await self.async_update()
+        self.async_write_ha_state()
         await sendCommand(
             self._entryData,
             self._client,
@@ -104,6 +107,9 @@ class LightsAppModeSwitch(LightsAppSwitchEntity):
 
     async def async_turn_off(self) -> None:
         self._entryData["mode"][self._mode] = False
+        self._entryData["modePending"] = False
+        await self.async_update()
+        self.async_write_ha_state()
         await sendCommand(
             self._entryData,
             self._client,

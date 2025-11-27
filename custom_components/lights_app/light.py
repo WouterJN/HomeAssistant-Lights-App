@@ -67,6 +67,9 @@ class LightsAppTurnOnOff(LightsAppLightEntity):
     async def async_turn_on(self, **kwargs) -> None:
         if ATTR_BRIGHTNESS in kwargs:
             device_brightness = convert_ha_brightness_to_device(kwargs[ATTR_BRIGHTNESS])
+            self._entryData["brightness"] = device_brightness
+            self._entryData["brightnessPending"] = False
+            self._attr_brightness = kwargs[ATTR_BRIGHTNESS]
             await sendCommand(
                 self._entryData,
                 self._client,
@@ -78,10 +81,24 @@ class LightsAppTurnOnOff(LightsAppLightEntity):
             self._entryData, self._client, self._service, getTurnOnCommand()
         )
 
+        self._entryData["state"] = True
+        self._entryData["statePending"] = False
+        self._entryData["brightnessPending"] = False
+        self._attr_state = "on"
+        await self.async_update()
+        self.async_write_ha_state()
+
     async def async_turn_off(self) -> None:
         await sendCommand(
             self._entryData, self._client, self._service, getTurnOffCommand()
         )
+
+        self._entryData["state"] = False
+        self._entryData["statePending"] = False
+        self._entryData["brightnessPending"] = False
+        self._attr_state = "off"
+        await self.async_update()
+        self.async_write_ha_state()
 
     @property
     def state(self):
