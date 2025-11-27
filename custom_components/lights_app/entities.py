@@ -20,6 +20,7 @@ class LightsAppEntity(Entity):
         self._enabled = False
         self._name = "Lights App"
         self._name_suffix = name_suffix
+        self._attr_should_poll = False
 
         self._attr_color_mode = ColorMode.ONOFF
         self._attr_supported_color_modes = set([ColorMode.ONOFF])
