@@ -96,8 +96,17 @@ def disconnect_handler(entryData: dict):
         entryData["refreshInProgress"] = False
         entryData["lastRefreshRequest"] = None
         entryData["connection"]["connected"] = False
+        entryData["connection"]["service"] = None
         for entity in entryData["entities"]:
             entity.async_write_ha_state()
+
+        hass = entryData.get("hass")
+        config_entry = entryData.get("config_entry")
+        if hass and config_entry:
+            LOGGER.debug("Scheduling reconnect after disconnect")
+            hass.async_create_task(
+                hass.config_entries.async_reload(config_entry.entry_id)
+            )
 
     return handleBleakDisconnect
 
