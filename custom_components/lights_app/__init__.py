@@ -1,5 +1,4 @@
 import time
-from datetime import timedelta
 
 from bleak_retry_connector import establish_connection, BleakClientWithServiceCache
 from homeassistant.config_entries import ConfigEntry
@@ -128,8 +127,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         "refreshInProgress": False,
         "lastRefreshRequest": None,
         "connection": {"connected": False, "connecting": False},
-        "hass": hass,
-        "config_entry": entry,
     }
 
     await setupConnection(hass, address, entry)
@@ -142,8 +139,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             connection = entry_data["connection"]
 
             if not connection["connected"]:
-                LOGGER.debug("Not connected, attempting reconnection...")
-                await setupConnection(hass, address, entry)
+                LOGGER.debug("Not connected, reloading...")
+                await hass.config_entries.async_reload(entry.entry_id)
                 return
 
             if not (
@@ -189,7 +186,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             LOGGER,
             name="Lights App resource status",
             update_method=async_update_data,
-            update_interval=timedelta(seconds=30),
         )
         hass.data[DOMAIN][entry.entry_id]["coordinator"] = lightsAppCoordinator
 
